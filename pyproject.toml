@@ -1,0 +1,29 @@
+[project]
+name = "agent-factory"
+version = "0.1.0"
+description = "Workspace for defining, running, and operating long-lived personal agents."
+requires-python = ">=3.11"
+dependencies = [
+  "alembic>=1.13.0",
+  "fastapi>=0.115.0",
+  "openai>=1.0.0",
+  "pgvector>=0.3.0",
+  "psycopg[binary]>=3.2.0",
+  "pydantic>=2.8.0",
+  "sqlalchemy>=2.0.0",
+  "tavily-python>=0.5.0",
+  "uvicorn>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+include = ["app*"]

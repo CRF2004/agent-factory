@@ -1,0 +1,161 @@
+{
+  "$defs": {
+    "TaskPriority": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "TaskPriority",
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "created",
+        "queued",
+        "running",
+        "waiting_approval",
+        "blocked",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    },
+    "TaskType": {
+      "enum": [
+        "research_scan",
+        "project_review",
+        "memory_update",
+        "task_decomposition",
+        "weekly_report",
+        "custom"
+      ],
+      "title": "TaskType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "task_id": {
+      "minLength": 1,
+      "title": "Task Id",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "type": {
+      "$ref": "#/$defs/TaskType"
+    },
+    "owner_agent": {
+      "minLength": 1,
+      "title": "Owner Agent",
+      "type": "string"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project Id"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskStatus",
+      "default": "created"
+    },
+    "priority": {
+      "$ref": "#/$defs/TaskPriority",
+      "default": "medium"
+    },
+    "created_by": {
+      "default": "manual",
+      "title": "Created By",
+      "type": "string"
+    },
+    "input": {
+      "additionalProperties": true,
+      "title": "Input",
+      "type": "object"
+    },
+    "expected_output": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Expected Output",
+      "type": "array"
+    },
+    "output": {
+      "additionalProperties": true,
+      "title": "Output",
+      "type": "object"
+    },
+    "requires_approval": {
+      "default": false,
+      "title": "Requires Approval",
+      "type": "boolean"
+    },
+    "dependencies": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dependencies",
+      "type": "array"
+    },
+    "next_action": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Action"
+    }
+  },
+  "required": [
+    "task_id",
+    "title",
+    "type",
+    "owner_agent"
+  ],
+  "title": "TaskSpec",
+  "type": "object"
+}

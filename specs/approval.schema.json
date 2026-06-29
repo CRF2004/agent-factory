@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "ApprovalStatus": {
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "needs_revision",
+        "expired"
+      ],
+      "title": "ApprovalStatus",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "approval_id": {
+      "minLength": 1,
+      "title": "Approval Id",
+      "type": "string"
+    },
+    "requesting_agent": {
+      "minLength": 1,
+      "title": "Requesting Agent",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Id"
+    },
+    "action_type": {
+      "minLength": 1,
+      "title": "Action Type",
+      "type": "string"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel"
+    },
+    "summary": {
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "details": {
+      "additionalProperties": true,
+      "title": "Details",
+      "type": "object"
+    },
+    "status": {
+      "$ref": "#/$defs/ApprovalStatus",
+      "default": "pending"
+    },
+    "user_decision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "User Decision"
+    },
+    "decided_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decided At"
+    }
+  },
+  "required": [
+    "approval_id",
+    "requesting_agent",
+    "action_type",
+    "risk_level",
+    "summary"
+  ],
+  "title": "ApprovalRequest",
+  "type": "object"
+}

@@ -1,0 +1,122 @@
+{
+  "$defs": {
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "ToolPermission": {
+      "enum": [
+        "read_only",
+        "write_local",
+        "write_memory",
+        "write_external",
+        "dangerous"
+      ],
+      "title": "ToolPermission",
+      "type": "string"
+    },
+    "ToolType": {
+      "enum": [
+        "information",
+        "file",
+        "code",
+        "data",
+        "external_action",
+        "memory",
+        "llm"
+      ],
+      "title": "ToolType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "tool_id": {
+      "minLength": 1,
+      "title": "Tool Id",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "type": {
+      "$ref": "#/$defs/ToolType"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "permission": {
+      "$ref": "#/$defs/ToolPermission"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel",
+      "default": "low"
+    },
+    "requires_approval": {
+      "default": false,
+      "title": "Requires Approval",
+      "type": "boolean"
+    },
+    "allowed_agents": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Agents",
+      "type": "array"
+    },
+    "config_schema": {
+      "additionalProperties": true,
+      "title": "Config Schema",
+      "type": "object"
+    },
+    "enabled": {
+      "default": true,
+      "title": "Enabled",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "tool_id",
+    "name",
+    "type",
+    "permission"
+  ],
+  "title": "ToolSpec",
+  "type": "object"
+}

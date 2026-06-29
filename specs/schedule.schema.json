@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "TaskType": {
+      "enum": [
+        "research_scan",
+        "project_review",
+        "memory_update",
+        "task_decomposition",
+        "weekly_report",
+        "custom"
+      ],
+      "title": "TaskType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "schedule_id": {
+      "minLength": 1,
+      "title": "Schedule Id",
+      "type": "string"
+    },
+    "agent_id": {
+      "minLength": 1,
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "task_type": {
+      "$ref": "#/$defs/TaskType"
+    },
+    "cron": {
+      "minLength": 1,
+      "title": "Cron",
+      "type": "string"
+    },
+    "input": {
+      "additionalProperties": true,
+      "title": "Input",
+      "type": "object"
+    },
+    "enabled": {
+      "default": true,
+      "title": "Enabled",
+      "type": "boolean"
+    },
+    "last_run_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Run At"
+    },
+    "next_run_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Run At"
+    }
+  },
+  "required": [
+    "schedule_id",
+    "agent_id",
+    "task_type",
+    "cron"
+  ],
+  "title": "ScheduleSpec",
+  "type": "object"
+}

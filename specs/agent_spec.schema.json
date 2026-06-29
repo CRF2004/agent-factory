@@ -1,0 +1,303 @@
+{
+  "$defs": {
+    "ActionPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "auto": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Auto",
+          "type": "array"
+        },
+        "approval_required": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Approval Required",
+          "type": "array"
+        }
+      },
+      "title": "ActionPolicy",
+      "type": "object"
+    },
+    "AgentStatus": {
+      "enum": [
+        "idle",
+        "running",
+        "waiting_approval",
+        "blocked",
+        "disabled",
+        "error",
+        "active"
+      ],
+      "title": "AgentStatus",
+      "type": "string"
+    },
+    "AutonomyLevel": {
+      "enum": [
+        "L0",
+        "L1",
+        "L2",
+        "L3",
+        "L4"
+      ],
+      "title": "AutonomyLevel",
+      "type": "string"
+    },
+    "EvaluationRule": {
+      "enum": [
+        "source_required",
+        "relevance_score_required",
+        "duplication_check",
+        "confidence_required",
+        "audit_log_required"
+      ],
+      "title": "EvaluationRule",
+      "type": "string"
+    },
+    "MemoryPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "read": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Read",
+          "type": "array"
+        },
+        "write": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Write",
+          "type": "array"
+        },
+        "require_source": {
+          "default": true,
+          "title": "Require Source",
+          "type": "boolean"
+        },
+        "low_confidence_requires_review": {
+          "default": true,
+          "title": "Low Confidence Requires Review",
+          "type": "boolean"
+        }
+      },
+      "title": "MemoryPolicy",
+      "type": "object"
+    },
+    "ToolBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "permission": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolPermission"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "tool_id"
+      ],
+      "title": "ToolBinding",
+      "type": "object"
+    },
+    "ToolPermission": {
+      "enum": [
+        "read_only",
+        "write_local",
+        "write_memory",
+        "write_external",
+        "dangerous"
+      ],
+      "title": "ToolPermission",
+      "type": "string"
+    },
+    "TriggerSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/TriggerType"
+        },
+        "cron": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cron"
+        },
+        "event_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Event Name"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "input": {
+          "additionalProperties": true,
+          "title": "Input",
+          "type": "object"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "TriggerSpec",
+      "type": "object"
+    },
+    "TriggerType": {
+      "enum": [
+        "manual",
+        "schedule",
+        "event"
+      ],
+      "title": "TriggerType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "agent_id": {
+      "minLength": 1,
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "role": {
+      "minLength": 1,
+      "title": "Role",
+      "type": "string"
+    },
+    "mission": {
+      "minLength": 1,
+      "title": "Mission",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/AgentStatus",
+      "default": "idle"
+    },
+    "autonomy_level": {
+      "$ref": "#/$defs/AutonomyLevel",
+      "default": "L1"
+    },
+    "project_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Project Ids",
+      "type": "array"
+    },
+    "triggers": {
+      "items": {
+        "$ref": "#/$defs/TriggerSpec"
+      },
+      "title": "Triggers",
+      "type": "array"
+    },
+    "tools": {
+      "items": {
+        "$ref": "#/$defs/ToolBinding"
+      },
+      "title": "Tools",
+      "type": "array"
+    },
+    "memory_access": {
+      "$ref": "#/$defs/MemoryPolicy"
+    },
+    "actions": {
+      "$ref": "#/$defs/ActionPolicy"
+    },
+    "evaluation": {
+      "items": {
+        "$ref": "#/$defs/EvaluationRule"
+      },
+      "title": "Evaluation",
+      "type": "array"
+    },
+    "output_format": {
+      "default": "markdown",
+      "title": "Output Format",
+      "type": "string"
+    },
+    "failure_policy": {
+      "default": "record_error_and_stop",
+      "title": "Failure Policy",
+      "type": "string"
+    },
+    "version": {
+      "default": "0.1.0",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "agent_id",
+    "name",
+    "role",
+    "mission"
+  ],
+  "title": "AgentSpec",
+  "type": "object"
+}
