@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import datetime
 from typing import TypeVar
 
 from sqlalchemy import select
@@ -8,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.tables import (
+    AgentHeartbeatRecord,
     AgentRecord,
     AgentRunRecord,
     ApprovalRecord,
@@ -17,6 +19,7 @@ from app.models.tables import (
 )
 from app.schemas.agent_spec import AgentSpec
 from app.schemas.approval import ApprovalRequest
+from app.schemas.heartbeat import AgentHeartbeatState
 from app.schemas.memory import MemoryItem
 from app.schemas.run import AgentRun, ToolCall
 from app.schemas.task import TaskSpec
@@ -111,6 +114,8 @@ class SQLAlchemyRepository:
 
     def create_memory_item(self, memory_item: MemoryItem) -> MemoryItem:
         with self.session_factory() as session:
+            if session.get(MemoryItemRecord, memory_item.id):
+                raise DuplicateError(f"memory item already exists: {memory_item.id}")
             session.add(self._memory_item_to_record(memory_item))
             self._commit(session)
         return memory_item
@@ -119,6 +124,62 @@ class SQLAlchemyRepository:
         with self.session_factory() as session:
             records = session.scalars(select(MemoryItemRecord)).all()
             return [MemoryItem.model_validate(record.spec_json) for record in records]
+
+    def upsert_memory_item(self, memory_item: MemoryItem) -> MemoryItem:
+        with self.session_factory() as session:
+            session.merge(self._memory_item_to_record(memory_item))
+            self._commit(session)
+        return memory_item
+
+    def get_heartbeat_state(self, agent_id: str) -> AgentHeartbeatState:
+        with self.session_factory() as session:
+            record = session.get(AgentHeartbeatRecord, agent_id)
+            if record is None:
+                raise NotFoundError(agent_id)
+            return AgentHeartbeatState.model_validate(record.state_json)
+
+    def upsert_heartbeat_state(
+        self, state: AgentHeartbeatState
+    ) -> AgentHeartbeatState:
+        with self.session_factory() as session:
+            session.merge(self._heartbeat_to_record(state))
+            self._commit(session)
+        return state
+
+    def acquire_heartbeat_lease(
+        self,
+        agent_id: str,
+        lease_token: str,
+        now: str,
+        lease_until: str,
+    ) -> AgentHeartbeatState | None:
+        with self.session_factory() as session:
+            record = session.get(
+                AgentHeartbeatRecord,
+                agent_id,
+                with_for_update=True,
+            )
+            if record is None:
+                state = AgentHeartbeatState(
+                    agent_id=agent_id,
+                    lease_token=lease_token,
+                    lease_until=lease_until,
+                )
+                session.add(self._heartbeat_to_record(state))
+            else:
+                state = AgentHeartbeatState.model_validate(record.state_json)
+                if state.lease_until and _is_after(state.lease_until, now):
+                    session.rollback()
+                    return None
+                state.lease_token = lease_token
+                state.lease_until = lease_until
+                session.merge(self._heartbeat_to_record(state))
+            try:
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                return None
+            return state
 
     def list_approvals(self) -> list[ApprovalRequest]:
         with self.session_factory() as session:
@@ -163,6 +224,17 @@ class SQLAlchemyRepository:
             status=agent.status.value,
             autonomy_level=agent.autonomy_level.value,
             spec_json=payload,
+        )
+
+    def _heartbeat_to_record(
+        self, state: AgentHeartbeatState
+    ) -> AgentHeartbeatRecord:
+        return AgentHeartbeatRecord(
+            agent_id=state.agent_id,
+            next_wakeup_at=state.next_wakeup_at,
+            lease_token=state.lease_token,
+            lease_until=state.lease_until,
+            state_json=state.model_dump(mode="json"),
         )
 
     def _task_to_record(self, task: TaskSpec) -> TaskRecord:
@@ -238,3 +310,7 @@ class SQLAlchemyRepository:
             status=approval.status.value,
             spec_json=payload,
         )
+
+
+def _is_after(value: str, reference: str) -> bool:
+    return datetime.fromisoformat(value) > datetime.fromisoformat(reference)
