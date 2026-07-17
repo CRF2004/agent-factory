@@ -81,7 +81,10 @@ class HeartbeatService:
         self.repository.upsert_heartbeat_state(state)
 
         try:
-            cycle = self.autonomous_runtime.run_once(agent_id)
+            cycle = self.autonomous_runtime.run_once(
+                agent_id,
+                context={"default_wakeup_seconds": self.default_wakeup_seconds},
+            )
             wakeup_seconds = max(1, cycle.next_wakeup_seconds)
             state.next_wakeup_at = _iso(now + timedelta(seconds=wakeup_seconds))
             state.consecutive_failures = 0
