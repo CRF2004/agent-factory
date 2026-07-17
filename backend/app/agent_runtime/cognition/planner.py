@@ -36,19 +36,29 @@ class Planner:
         agent: AgentSpec,
         observation: dict[str, Any],
     ) -> PlanDecision:
+        default_wakeup_seconds = max(
+            1,
+            int(observation.get("default_wakeup_seconds", 3600)),
+        )
         tasks = observation.get("recent_tasks", [])
         active_tasks = [task for task in tasks if task.status in ACTIVE_TASK_STATES]
         if active_tasks:
             return PlanDecision(
                 reason="active task exists",
-                next_wakeup_seconds=60,
+                next_wakeup_seconds=min(60, default_wakeup_seconds),
             )
 
         if observation.get("cooldown_active"):
             return PlanDecision(
                 reason="mission handled within cooldown",
-                next_wakeup_seconds=int(
-                    observation.get("cooldown_remaining_seconds", 3600)
+                next_wakeup_seconds=max(
+                    1,
+                    int(
+                        observation.get(
+                            "cooldown_remaining_seconds",
+                            default_wakeup_seconds,
+                        )
+                    ),
                 ),
             )
 
@@ -67,7 +77,7 @@ class Planner:
         return PlanDecision(
             reason="no active or recent equivalent task",
             tasks=[task],
-            next_wakeup_seconds=3600,
+            next_wakeup_seconds=default_wakeup_seconds,
         )
 
     def create_plan(
