@@ -19,8 +19,30 @@ class AgentRecord(Base):
     status: Mapped[str] = mapped_column(Text, nullable=False)
     autonomy_level: Mapped[str] = mapped_column(Text, nullable=False)
     spec_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class AgentHeartbeatRecord(Base):
+    __tablename__ = "agent_heartbeat_states"
+
+    agent_id: Mapped[str] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"), primary_key=True
+    )
+    next_wakeup_at: Mapped[str | None] = mapped_column(Text)
+    lease_token: Mapped[str | None] = mapped_column(Text)
+    lease_until: Mapped[str | None] = mapped_column(Text)
+    state_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class TaskRecord(Base):
@@ -37,8 +59,12 @@ class TaskRecord(Base):
     output_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     created_by: Mapped[str] = mapped_column(Text, nullable=False)
     spec_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class AgentRunRecord(Base):
@@ -55,8 +81,12 @@ class AgentRunRecord(Base):
     error_message: Mapped[str | None] = mapped_column(Text)
     cost: Mapped[float | None] = mapped_column(Numeric)
     spec_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class ToolCallRecord(Base):
@@ -70,8 +100,12 @@ class ToolCallRecord(Base):
     status: Mapped[str] = mapped_column(Text, nullable=False)
     risk_level: Mapped[str] = mapped_column(Text, nullable=False)
     spec_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class MemoryItemRecord(Base):
@@ -88,15 +122,21 @@ class MemoryItemRecord(Base):
     confidence: Mapped[float] = mapped_column(Numeric, nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
     spec_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class ApprovalRecord(Base):
     __tablename__ = "approvals"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
-    requesting_agent_id: Mapped[str] = mapped_column(ForeignKey("agents.id"), nullable=False)
+    requesting_agent_id: Mapped[str] = mapped_column(
+        ForeignKey("agents.id"), nullable=False
+    )
     task_id: Mapped[str | None] = mapped_column(ForeignKey("tasks.id"))
     action_type: Mapped[str] = mapped_column(Text, nullable=False)
     risk_level: Mapped[str] = mapped_column(Text, nullable=False)
@@ -104,8 +144,12 @@ class ApprovalRecord(Base):
     details_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     spec_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class ScheduleRecord(Base):
@@ -120,5 +164,9 @@ class ScheduleRecord(Base):
     last_run_at: Mapped[str | None] = mapped_column(Text)
     next_run_at: Mapped[str | None] = mapped_column(Text)
     spec_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
