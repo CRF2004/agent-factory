@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import datetime
+from threading import RLock
 from typing import Protocol
 
 from app.schemas.agent_spec import AgentSpec
 from app.schemas.approval import ApprovalRequest
+from app.schemas.heartbeat import AgentHeartbeatState
 from app.schemas.memory import MemoryItem
 from app.schemas.run import AgentRun, ToolCall
 from app.schemas.task import TaskSpec
@@ -44,6 +47,20 @@ class Repository(Protocol):
     # memory
     def create_memory_item(self, memory_item: MemoryItem) -> MemoryItem: ...
     def list_memory_items(self) -> list[MemoryItem]: ...
+    def upsert_memory_item(self, memory_item: MemoryItem) -> MemoryItem: ...
+
+    # heartbeat
+    def get_heartbeat_state(self, agent_id: str) -> AgentHeartbeatState: ...
+    def upsert_heartbeat_state(
+        self, state: AgentHeartbeatState
+    ) -> AgentHeartbeatState: ...
+    def acquire_heartbeat_lease(
+        self,
+        agent_id: str,
+        lease_token: str,
+        now: str,
+        lease_until: str,
+    ) -> AgentHeartbeatState | None: ...
 
     # approvals
     def create_approval(self, approval: ApprovalRequest) -> ApprovalRequest: ...
@@ -64,8 +81,10 @@ class InMemoryRepository:
         self.agent_runs: dict[str, AgentRun] = {}
         self.tool_calls: dict[str, ToolCall] = {}
         self.memory_items: dict[str, MemoryItem] = {}
+        self.heartbeat_states: dict[str, AgentHeartbeatState] = {}
         self.approvals: dict[str, ApprovalRequest] = {}
         self.tools: dict[str, ToolSpec] = {}
+        self._heartbeat_lock = RLock()
 
     # ── agents ──────────────────────────────────────
 
@@ -132,11 +151,52 @@ class InMemoryRepository:
     # ── memory ──────────────────────────────────────
 
     def create_memory_item(self, memory_item: MemoryItem) -> MemoryItem:
+        if memory_item.id in self.memory_items:
+            raise DuplicateError(f"memory item already exists: {memory_item.id}")
         self.memory_items[memory_item.id] = deepcopy(memory_item)
         return deepcopy(memory_item)
 
     def list_memory_items(self) -> list[MemoryItem]:
         return [deepcopy(item) for item in self.memory_items.values()]
+
+    def upsert_memory_item(self, memory_item: MemoryItem) -> MemoryItem:
+        self.memory_items[memory_item.id] = deepcopy(memory_item)
+        return deepcopy(memory_item)
+
+    # ── heartbeat ───────────────────────────────────
+
+    def get_heartbeat_state(self, agent_id: str) -> AgentHeartbeatState:
+        with self._heartbeat_lock:
+            if agent_id not in self.heartbeat_states:
+                raise NotFoundError(agent_id)
+            return deepcopy(self.heartbeat_states[agent_id])
+
+    def upsert_heartbeat_state(
+        self, state: AgentHeartbeatState
+    ) -> AgentHeartbeatState:
+        with self._heartbeat_lock:
+            self.heartbeat_states[state.agent_id] = deepcopy(state)
+            return deepcopy(state)
+
+    def acquire_heartbeat_lease(
+        self,
+        agent_id: str,
+        lease_token: str,
+        now: str,
+        lease_until: str,
+    ) -> AgentHeartbeatState | None:
+        with self._heartbeat_lock:
+            state = deepcopy(
+                self.heartbeat_states.get(
+                    agent_id, AgentHeartbeatState(agent_id=agent_id)
+                )
+            )
+            if state.lease_until and _is_after(state.lease_until, now):
+                return None
+            state.lease_token = lease_token
+            state.lease_until = lease_until
+            self.heartbeat_states[agent_id] = deepcopy(state)
+            return state
 
     # ── approvals ───────────────────────────────────
 
@@ -173,3 +233,7 @@ class InMemoryRepository:
 
     def list_tools(self) -> list[ToolSpec]:
         return [deepcopy(item) for item in self.tools.values()]
+
+
+def _is_after(value: str, reference: str) -> bool:
+    return datetime.fromisoformat(value) > datetime.fromisoformat(reference)
