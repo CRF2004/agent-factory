@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from threading import Event, Thread
 
 from app.agent_runtime.lifecycle.heartbeat import HeartbeatService
+
+logger = logging.getLogger(__name__)
 
 
 class HeartbeatRunner:
@@ -35,5 +38,8 @@ class HeartbeatRunner:
 
     def _run(self) -> None:
         while not self._stop_event.is_set():
-            self.service.run_due_agents()
+            try:
+                self.service.run_due_agents()
+            except Exception:
+                logger.exception("Heartbeat polling cycle failed")
             self._stop_event.wait(self.poll_seconds)
