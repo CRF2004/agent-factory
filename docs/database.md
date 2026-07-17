@@ -1,4 +1,4 @@
-# Phase 0 Database Design
+# Agent Factory Database Design
 
 ## agents
 
@@ -13,6 +13,20 @@
 | spec_json | jsonb | Full Agent Spec |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+
+## agent_heartbeat_states
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| agent_id | text primary key | References agents(id), cascade delete |
+| next_wakeup_at | text nullable | UTC ISO-8601 time for the next due heartbeat |
+| lease_token | text nullable | Current execution lease owner |
+| lease_until | text nullable | UTC ISO-8601 lease expiry |
+| state_json | jsonb | Full heartbeat state including history and failures |
+| created_at | timestamptz | |
+| updated_at | timestamptz | |
+
+The lease columns are indexed so multiple resident processes can safely contend for one agent. `state_json` stores `last_wakeup_at`, `last_action_at`, `last_task_id`, `consecutive_failures`, and `last_error`.
 
 ## tasks
 
@@ -41,8 +55,8 @@
 | status | text | running/completed/failed/cancelled |
 | input_json | jsonb | |
 | output_json | jsonb | |
-| started_at | timestamptz | |
-| ended_at | timestamptz nullable | |
+| started_at | text | UTC ISO-8601 timestamp |
+| ended_at | text nullable | UTC ISO-8601 timestamp |
 | error_message | text nullable | |
 | cost | numeric nullable | |
 
@@ -72,25 +86,12 @@
 | source_run_id | text nullable | references agent_runs(id) |
 | status | text | candidate/approved/active/deprecated/rejected/conflict |
 | confidence | numeric | 0 to 1 |
-| tags | text[] | |
+| embedding | vector nullable | Semantic retrieval vector |
+| spec_json | jsonb | Full MemoryItem including tags and project links |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-## skills
-
-| Column | Type | Notes |
-| --- | --- | --- |
-| id | text primary key | |
-| name | text | |
-| description | text | |
-| trigger_condition | text | |
-| steps_json | jsonb | |
-| tools_json | jsonb | |
-| version | text | |
-| status | text | candidate/active/deprecated |
-| created_from_task_id | text nullable | references tasks(id) |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
+Experience deduplication uses a deterministic fingerprint stored in `MemoryItem.tags`. A repeated equivalent reflection updates the existing record through repository upsert.
 
 ## approvals
 
@@ -104,9 +105,8 @@
 | summary | text | |
 | details_json | jsonb | |
 | status | text | pending/approved/rejected/needs_revision/expired |
-| user_decision | text nullable | |
 | created_at | timestamptz | |
-| decided_at | timestamptz nullable | |
+| updated_at | timestamptz | |
 
 ## schedules
 
@@ -118,5 +118,6 @@
 | cron | text | |
 | input_json | jsonb | |
 | enabled | boolean | |
-| last_run_at | timestamptz nullable | |
-| next_run_at | timestamptz nullable | |
+| last_run_at | text nullable | |
+| next_run_at | text nullable | |
+| spec_json | jsonb | Full schedule configuration |

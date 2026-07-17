@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from sqlalchemy.orm import sessionmaker
 
+from app.agent_runtime.lifecycle.heartbeat import HeartbeatService
+from app.agent_runtime.runtime import AutonomousRuntime
 from app.core.config import get_settings
 from app.db.session import make_session_factory
 from app.services.llm_client import DmxapiClient, MockLLMClient
@@ -52,6 +54,13 @@ else:
     vector_store = NoopVectorStore()
 
 runtime_service = RuntimeService(repository, llm_client, web_search, vector_store)
+autonomous_runtime = AutonomousRuntime(repository, runtime_service)
+heartbeat_service = HeartbeatService(
+    repository=repository,
+    autonomous_runtime=autonomous_runtime,
+    default_wakeup_seconds=settings.default_wakeup_seconds,
+    lease_seconds=settings.heartbeat_lease_seconds,
+)
 
 
 def get_repository():
@@ -60,6 +69,14 @@ def get_repository():
 
 def get_runtime_service() -> RuntimeService:
     return runtime_service
+
+
+def get_autonomous_runtime() -> AutonomousRuntime:
+    return autonomous_runtime
+
+
+def get_heartbeat_service() -> HeartbeatService:
+    return heartbeat_service
 
 
 def get_llm_client():

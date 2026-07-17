@@ -8,18 +8,9 @@ from app.agent_runtime.lifecycle.wakeup import WakeupLoop
 from app.schemas.agent_spec import AgentStatus
 from app.schemas.memory import MemoryItem
 from app.schemas.run import AgentRun
-from app.schemas.task import TaskSpec, TaskStatus
+from app.schemas.task import TaskSpec
 from app.services.repository import Repository
 from app.services.runtime import RuntimeService
-
-
-ACTIVE_TASK_STATES = {
-    TaskStatus.created,
-    TaskStatus.queued,
-    TaskStatus.running,
-    TaskStatus.waiting_approval,
-    TaskStatus.blocked,
-}
 
 
 @dataclass(frozen=True)
@@ -30,6 +21,8 @@ class AutonomousCycleResult:
     executed_task: TaskSpec | None = None
     run: AgentRun | None = None
     experience_memory: MemoryItem | None = None
+    decision_reason: str = ""
+    next_wakeup_seconds: int = 3600
 
     @property
     def acted(self) -> bool:
@@ -51,40 +44,47 @@ class AutonomousRuntime:
         self.wakeup_loop = wakeup_loop or WakeupLoop()
         self.reflection_engine = reflection_engine or ReflectionEngine(repository)
 
-    def run_once(self, agent_id: str) -> AutonomousCycleResult:
+    def run_once(
+        self,
+        agent_id: str,
+        context: dict[str, Any] | None = None,
+    ) -> AutonomousCycleResult:
         agent = self.repository.get_agent(agent_id)
         if agent.status == AgentStatus.disabled:
             return AutonomousCycleResult(
                 agent_id=agent_id,
                 observation={"agent_id": agent_id, "disabled": True},
+                decision_reason="agent disabled",
             )
 
-        active_tasks = [
+        recent_tasks = [
             task
             for task in self.repository.list_tasks()
-            if task.owner_agent == agent_id and task.status in ACTIVE_TASK_STATES
-        ]
+            if task.owner_agent == agent_id
+        ][-20:]
         recent_memory = [
             item
             for item in self.repository.list_memory_items()
             if item.created_by_agent_id == agent_id
         ][-10:]
 
-        observation, planned_tasks = self.wakeup_loop.observe_and_plan(
+        observation, decision = self.wakeup_loop.observe_and_decide(
             agent,
-            recent_tasks=active_tasks,
+            recent_tasks=recent_tasks,
             recent_memory=recent_memory,
+            context=context,
         )
-        if not planned_tasks:
+        if not decision.tasks:
             agent.status = AgentStatus.idle
             self.repository.upsert_agent(agent)
             return AutonomousCycleResult(
                 agent_id=agent_id,
                 observation=observation,
-                planned_tasks=[],
+                decision_reason=decision.reason,
+                next_wakeup_seconds=decision.next_wakeup_seconds,
             )
 
-        task = planned_tasks[0]
+        task = decision.tasks[0]
         agent.status = AgentStatus.running
         self.repository.upsert_agent(agent)
 
@@ -103,8 +103,10 @@ class AutonomousRuntime:
         return AutonomousCycleResult(
             agent_id=agent_id,
             observation=observation,
-            planned_tasks=planned_tasks,
+            planned_tasks=decision.tasks,
             executed_task=completed_task,
             run=run,
             experience_memory=experience,
+            decision_reason=decision.reason,
+            next_wakeup_seconds=decision.next_wakeup_seconds,
         )

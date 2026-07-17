@@ -1,16 +1,15 @@
 """add pgvector embedding column to memory_items
 
 Revision ID: 0002
-Revises: 0001
+Revises: 0001_phase0_schema
 Create Date: 2026-06-29
 """
 from collections.abc import Sequence
 
 from alembic import op
-from sqlalchemy import Text
 
 revision: str = "0002"
-down_revision: str | None = "0001"
+down_revision: str | None = "0001_phase0_schema"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
